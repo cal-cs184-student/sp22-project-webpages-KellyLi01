@@ -122,7 +122,7 @@
 
         <h3 align="middle">Part 3: Transforms</h3>
         
-        <div align="middle">
+        <div align="center">
             <img src="images/task3.png" align="middle" width="600px" />
         </div>
 
@@ -134,6 +134,82 @@
             to make his arms look like they connected at the top of his torso.
         </p>
 
+
+        <h2 align="middle">Section II: Sampling</h2>
+
+        <h3 align="middle">Part 4: Barycentric coordinates</h3>
+        <p>
+            Using the line equation that is used in point-in-triangle tests, we find the line equation values for point A respective to line BC, B respective to AC, and C respective to AB. 
+            To find the barycentric coordinates of a given point, we would find its line equation values with respect to each of the triangle’s lines, and we divide by the line equation value of the vertex not included in the line. 
+            Using point A, B, and C will give us alpha, beta, gamma respectively. 
+            We then normalize the values so that alpha + beta + gamma = 1. Thus, the point’s barycentric coordinate is (alpha, beta, gamma). 
+            To find the color we should fill the point with, we add together A, B, and C’s colors with the equation alpha * A + beta * B + gamma * C.
+            As we can see in the triangle with one red, one green, and one blue vertex, points closer to the red vertex are more red while points closer to the middle of the triangle are more brown, as each point has a fairly equal influence on the color.
+        </p>
+        <div align="middle">
+            <img src="images/task4_triangle.png" align="middle" width="600px" />
+        </div>
+        <div align="middle">
+            <img src="images/task4_rainbow.png" align="middle" width="600px" />
+        </div>
+
+
+        <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+
+        <p>
+            We first convert the x,y pixel coordinate to a u,v texel coordinate by using the pixel’s
+            barycentric coordinates on the triangle vertices’ (u,v) coordinates.
+            In nearest sampling, we rounded the (u,v) coordinate to the closest texel and used that texel’s color
+            for the given pixel. In bilinear sampling, we found the four nearest texels of the (u,v) coordinate
+            and used linear interpolation to determine the color of the pixel from the four texels.
+        </p>
+
+        <div align="center">
+            <table style= "width=100%">
+                <tr>
+                    <td>
+                        <img src="images/task5_nearest_1.png" align="middle" width="400px" />
+                    </td>
+                    <td>
+                        <img src="images/task5_nearest_16.png" align="middle" width="400px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <p>
+            With nearest sampling at 1 sample per pixel, we can see that the edge of the seal has some straggler pixels that are colored in. 
+            This is due to nearest sampling only using the one nearest texel to determine a pixel’s color.
+            Even when our sample size increases to 16, these straggler pixels are still colored in,
+            albeit with lighter colors that are more blended into the white background due to our increased sample size
+            and anti-aliasing.
+        </p>
+
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td>
+                        <img src="images/task5_bilinear_1.png" align="middle" width="400px" />
+                    </td>
+                    <td>
+                        <img src="images/task5_bilinear_16.png" align="middle" width="400px" />
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <p>
+            However, with bilinear sampling, these straggler pixels do not show up since we are taking
+            more surrounding pixels into account and using more lerps to find the color we want our pixel to be.
+            When we increase our sample size from 1 to 16 with bilinear sampling, the edges of the seal are a bit
+            more blurred (as expected from an increase in sample size and anti-aliasing) and we see no straggler pixels.
+        </p>
+
+        <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+
+
+
+        
         <div align="middle">
             <table style="width=100%">
                 <tr>
@@ -159,33 +235,7 @@
                 </tr>
             </table>
         </div>
-
-        <h2 align="middle">Section II: Sampling</h2>
-
-        <h3 align="middle">Part 4: Barycentric coordinates</h3>
-        <p>
-            Using the line equation that is used in point-in-triangle tests, we find the line equation values for point A respective to line BC, B respective to AC, and C respective to AB. 
-            To find the barycentric coordinates of a given point, we would find its line equation values with respect to each of the triangle’s lines, and we divide by the line equation value of the vertex not included in the line. 
-            Using point A, B, and C will give us alpha, beta, gamma respectively. 
-            We then normalize the values so that alpha + beta + gamma = 1. Thus, the point’s barycentric coordinate is (alpha, beta, gamma). 
-            To find the color we should fill the point with, we add together A, B, and C’s colors with the equation alpha * A + beta * B + gamma * C.
-            As we can see in the triangle with one red, one green, and one blue vertex, points closer to the red vertex are more red while points closer to the middle of the triangle are more brown, as each point has a fairly equal influence on the color.
-        </p>
-        <div align="middle">
-            <img src="images/task4_triangle.png" align="middle" width="600px" />
-        </div>
-        <div align="middle">
-            <img src="images/task4_rainbow.png" align="middle" width="600px" />
-        </div>
-
-
-        <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
-
-
-        <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
-
-
-
+        
         <h2 align="middle">Section III: Art Competition</h2>
         <p>If you are not participating in the optional art competition, don't worry about this section!</p>
 
