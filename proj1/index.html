@@ -207,30 +207,84 @@
 
         <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
 
+        <p>
+            Level sampling is the process where we store different “levels” of a high-resolution texture,
+            with each level being a downscaled version of the previous level.
+            This allows us to sample from lower resolution textures when our image needs to be 
+            more blurred / less aliased. This allows us to achieve the supersampling effect of blurring or averaging
+            out of pixels to prevent aliasing, yet we are not increasing the sample rate on each pixel.
+        </p>
+        
+        <h4>How we implemented it:</h4>
+        
+        <p>
+            We were given mipmaps, so all we had to do was calculate the level to sample from and adjusted our level sampling methods based on the input.
+            <br />
+            To calculate the level to sample from, we followed this equation: 
+            <img src="images/task6_equation.png" align="middle"width="400px"/>
+            <br />
+            When lsm was L_ZERO, we defaulted to the 0th level (the original texture).
+            <br />
+            When lsm was L_NEAREST, we followed this equation to calculate the level and rounded the number to get our nearest integer level.
+            <br />
+            When lsm was L_LINEAR, we followed the equation to calculate the level but did not round the number to get our nearest integer level.
+            We floored this continuous number to get the first level D and did linear interpolation with the floored level D and the next level D + 1 to get the final color.
+        </p>
 
+        <h4>Tradeoffs</h4>
+    
+        <p>Supersampling</p>
+
+        <p>
+            Increasing the number of samples per pixel greatly increases the antialiasing power by averaging out the different samples,
+            but it uses much more memory since we have to increase the sample_buffer by a factor of sample_rate.
+            The speed at which we render the image also slows by a factor of sample_rate.
+        </p>
+
+        <p>Level Sampling</p>
+
+        <p>
+            Level sampling has great antialiasing power and is more efficient than increasing
+            the number of samples per pixel since the number of samples remains the same,
+            but it does require additional memory to store the various mipmap levels.
+            However, the memory usage is still less than supersampling since supersampling requires width * height * sample_rate amount of memory,
+            while mipmaps require O(width * height) memory.
+            It is able to blur the image more efficiently than supersampling and at a faster speed.
+        </p>
+
+        <p>Pixel Sampling</p>
+
+        <p>
+            Pixel sampling does not have high antialiasing power compared to level sampling and number of samples per pixel,
+            but changing from nearest to bilinear pixel sampling does have some anti aliasing effects.
+            Its overall memory usage is less than both level sampling and supersampling,
+            since there is a max of four samples per pixel (not reliant on a sample rate),
+            and it does not require the storing of additional textures. 
+            Its speed is similar to level sampling, since they both use the nearest and bilinear sampling techniques.
+        </p>
 
         
         <div align="middle">
             <table style="width=100%">
                 <tr>
                     <td>
-                        <img src="images/image1.png" align="middle" width="400px" />
-                        <figcaption align="middle">Caption goes here.</figcaption>
+                        <img src="images/task6_l_zero_p_nearest.png" align="middle" width="400px" />
+                        <figcaption align="middle">L_ZERO and P_NEAREST</figcaption>
                     </td>
                     <td>
-                        <img src="images/image2.png" align="middle" width="400px" />
-                        <figcaption align="middle">Caption goes here.</figcaption>
+                        <img src="images/task6_l_zero_p_linear.png" align="middle" width="400px" />
+                        <figcaption align="middle">L_ZERO and P_LINEAR</figcaption>
                     </td>
                 </tr>
                 <br />
                 <tr>
                     <td>
-                        <img src="images/image3.png" align="middle" width="400px" />
-                        <figcaption align="middle">Caption goes here.</figcaption>
+                        <img src="images/task6_l_nearest_p_nearest.png" align="middle" width="400px" />
+                        <figcaption align="middle">L_NEAREST and P_NEAREST</figcaption>
                     </td>
                     <td>
-                        <img src="images/image4.png" align="middle" width="400px" />
-                        <figcaption align="middle">Caption goes here.</figcaption>
+                        <img src="images/task6_l_nearest_p_linear.png" align="middle" width="400px" />
+                        <figcaption align="middle">L_NEAREST and P_LINEAR</figcaption>
                     </td>
                 </tr>
             </table>
