@@ -1,7 +1,313 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <style>
+    body {
+      padding: 100px;
+      width: 1000px;
+      margin: auto;
+      text-align: left;
+      font-weight: 300;
+      font-family: 'Open Sans', sans-serif;
+      color: #121212;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+  </style>
+  <title>CS 184 Mesh Editor</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2022</h1>
+  <h1 align="middle">Project 2: Mesh Editor</h1>
+  <h2 align="middle">KELLY LI, CS184-AAR; JENNIFER YANG, CS184-ABZ</h2>
+  <h2 align="middle">https://cal-cs184-student.github.io/sp22-project-webpages-KellyLi01/proj2/index.html</h2>
+
+  <br><br>
+
+      <div>
+
+          <h2 align="middle">Overview</h2>
+
+          <h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+          <h3 align="middle">Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
+
+          <p>
+              de Casteljau’s algorithm is used to recursively create Bezier curves given lines. For each step, the algorithm splits
+              each line into two subsections with a point on the line and creates new intermediate lines by connecting the new points drawn.
+              We repeat steps until we have one final point, which will be the point our Bezier curve draws through. Our algorithm is implemented by
+              looping through our control points and recursively finding the intermediate points of each line with the equation: (1 - t) * first_endpoint +
+              (t) * second_endpoint with a given t (which is a decided weight that represents how close to the first point we are).
+          </p>
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task1_original.png" align="middle" width="500px" />
+                          <figcaption align="middle">Original</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task1_step1.png" align="middle" width="500px" />
+                          <figcaption align="middle">Step 1</figcaption>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <img src="images/task1_step2.png" align="middle" width="500px" />
+                          <figcaption align="middle">Step 2</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task1_step3.png" align="middle" width="500px" />
+                          <figcaption align="middle">Step 3</figcaption>
+                      </td>
+                  </tr>
+                  <tr>
+                      <td>
+                          <img src="images/task1_step4.png" align="middle" width="500px" />
+                          <figcaption align="middle">Step 4</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task1_final.png" align="middle" width="500px" />
+                          <figcaption align="middle">Final</figcaption>
+                      </td>
+                  </tr>
+              </table>
+              <img src="images/task1_modified.png" align="middle" width="500px" />
+              <figcaption align="middle">Here is a slightly different Bezier curve with the original control points around and a different t value.</figcaption>
+          </div>
+          <div align="middle">
+              <h3 align="middle">Part 2: Bezier surfaces with separable 1D de Casteljau subdivision</h3>
+              <p>
+                  The de Casteljau algorithm can be extended to Bezier surfaces by performing the algorithm on two different axes, u and v (and thus making Bezier curves that are parameterized by u and v, respectively).
+                  To visualize, we have a plane with the u and v axes. The u curves find all the curves along the u axis (i.e. slices of a hill), then the singular v curve smooths over all the u curves to create the surface (like a 3D image of the hill slices put together).
+                  Our final point is a point that lies on the v curve that was created using the interpolated u curve points. We implemented this by copying the algorithm from part 1 but altering it to work with 3D points.
+                  We then ran the algorithm to completion for each u-curve to get the final interpolated points of each. Then, we ran the bezier curve algorithm again on a vector of these final points to get the v-curve.
+              </p>
+              <img src="images/task2_teapot.png" align="middle" width="500px" />
+          </div>
+
+
+          <h2 align="middle">Section II: Sampling</h2>
+
+          <h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+
+          <p>
+              We first found two adjacent half edges coming out of the vertex and the respective neighboring vertices.
+              We found the cross product using the neighboring vertices
+              (and subtracted the current vertex’s position from both so that the vectors start at the origin),
+              then calculated its norm. The norm of this cross product is also equal to 2 times the area of the triangle,
+              so it will be used in calculating the area weights. We repeated this for all adjacent half edges of the vertex.
+              Using the norms and the sum of all the norms, we calculated the area weights for each cross product.
+              We then added the area weight * cross product of each triangle to get the approximate normal at the vertex.
+              We then normalized the normal to get the approximate unit normal.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task3_teapot_flat_w_mesh.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot shading without vertex normals.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task3_teapot_smooth_w_mesh.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot shading with vertex normals.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+          <h3 align="middle">Part 4: Half-edge flip</h3>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task4_diagram.png" align="middle" width="600px" />
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+          <p>
+              First, we check if the <i>EdgeIter</i> inputted is a boundary.
+              If it is on a boundary, we immediately return.
+              Then, we store everything we will need for the edge flip (all our halfedges, vertex positions, and faces).
+              Refer to the diagram above for vertex names.
+          </p>
+
+          <p>
+              We start by reassigning the halfedges associated with the to-be-flipped edge.
+              Halfedge b→c’s root vertex is reassigned from b to d.
+              We will refer to this as halfedge 1.
+              Halfedge c→b’s root vertex is reassigned from c to a.
+              We will refer to this halfedge as halfedge 2.
+          </p>
+
+          <p>
+              Then, we reassign the halfedge that vertex c returns when halfedge() is called to halfedge c→a.
+              We also reassign the halfedge that vertex b returns when halfedge() is called to halfedge b→d.
+              This prevents the flipped edge from impacting the halfedges returned at their previous vertices.
+              Then, we reassign the original left face (a,b,c)’s halfedge to be the halfedge from a→b
+              (this will be the halfedge corresponding to the top face).
+              We also reassign the original right face (b,d,c) halfedge to be the halfedge from d→c
+              (this will be the halfedge corresponding to the bottom face).
+          </p>
+
+          <p>
+              After setting the faces, we reassign all the corresponding next() calls for each halfedge in the impacted faces.
+              Finally, we set the faces for c→a to (a, c, d) and b→d to (a, b, d) because they switched faces as a result of the edge flip.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task4_unflipped.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot before flipping edges.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task4_flipped_edges.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot after flipping some edges.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+              <img src="images/task4_holes.png" align="middle" width="500px" />
+              <figcaption align="middle">
+                  Some holes we saw during our debugging experience
+                  (These are not in our final code).
+              </figcaption>
+          </div>
+
+          <h3 align="middle">Part 5: Half-edge split</h3>
+
+          <p>
+              For edge split, we used setNeighbors() since we are making 1 new vertex, 2 new faces, and 3 new edges.
+              We first created the new vertex at the midpoint of the edge that we were to split.
+              Then, we created the new faces, edges, and their respective halfedges. 
+              Then we used setNeighbors to assign our 8 halfedges that point to or are rooted at m their respective next(), twin(), vertex, edge, and faces. 
+              Finally, four of our halfedges were not split (the ones not originally on edge b-c) and thus have different next() halfedges and faces after the split, 
+              so we set those halfedges to their new next() halfedges and their new faces.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task5_before_alter.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot before splitting edges.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task5_splits_only.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot after splitting some edges.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task5_before_alter.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot before splitting and flipping edges.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task5_splits_flips.png" align="middle" width="500px" />
+                          <figcaption align="middle">Teapot after splitting and flipping some edges.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+
+          <h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+
+          <h4>Implementation Summary</h4>
+
+          <p>
+              We first went through all the vertices to assign them as not new and calculated what their modified position should be using the given equations and stored it in newPosition.
+              We then went through all the edges in the mesh, assigned them as not new,
+              and calculated what their midpoint should be with the given equation in the spec and stored it in newPosition.
+              After determining all the vertex positions, we iterated through the edges again to create the midpoint vertex and split the edges at that point.
+              The newly created edges which were part of the original edge (i.e. c-m was part of edge b-c) were set to not new and their newPosition coordinate values set to the max float value,
+              while the rest of the edges were set to new. The setting of the coordinate values prevents an infinite loop from occurring,
+              since new “original edges” were being created. We then iterated through the edges again,
+              flipping an edge if isNew was true and only one vertex was new.
+              Finally, we reassigned the original vertex positions to their new, modified positions by setting position to newPosition.
+          </p>
+
+          <p>
+              An interesting debugging trick we used was looking at the degree of a vertex after every upsample,
+              which allowed us to see if the u- and n-value in the vertex-updating equation was being properly calculated.
+          </p>
+
+          <h4>Preprocessing</h4>
+
+          <p>
+              After loop subdivision, the sharp corners get smoother and the edges become smaller. 
+              To reduce this smoothing effect, we can pre-split edges and our meshes with the pre-split edges
+              will become rougher in texture when we perform loop subdivision.
+              This happens because we are making more triangles,
+              thus better preserving the original shape of the mesh before upsampling.
+              For example, the cow maintains its pointy horns after one upsample because of how many faces are in the mesh,
+              while the cube immediately loses its corners since each side only has 2 faces.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <tr>
+                      <td>
+                          <img src="images/task6_cow.png" align="middle" width="500px" />
+                          <figcaption align="middle">Cow still has visible ear and horn appendages.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/task6_cube_loop3.png" align="middle" width="500px" />
+                          <figcaption align="middle">Cube has lost all its edges.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+            
+          <p>
+              Each cube side originally had 2 faces, thus only 2 vertices per face had degree 6 while the other 2 had degree 3,
+              making the n- and u- values of the vertex updating equation different,
+              so they become more asymmetrical as the cube was upsampled.
+          </p>
+
+          <p>
+              In order for the cub to subdivide symmetrically, 
+              we need to split our diagonal edges on all sides of the cube (making an “X” on all sides of our cube, as we can see in the pictures below). 
+              This helps with alleviating the effects of a slightly asymmetric cube because each cube face has vertices with the same degree and triangles that are centered around the center of each cube face 
+              (compared to the original cube.dae which had one edge leaning towards the side the asymmetry would eventually lean towards). 
+              As a result, our loop subdivision will cause the cube to stay symmetric.
+          </p>
+
+          <div align="middle">
+              <table style="width=100%">
+                  <img src="images/task6_cube_loop3.png" align="middle" width="500px" />
+                  <figcaption align="middle">Cube upsampling without preprocessing.</figcaption>
+                  <tr>
+                      <td>
+                          <img src="images/q6_symmetric1.png" align="middle" width="500px" />
+                          <figcaption align="middle">Cube with preprocessing.</figcaption>
+                      </td>
+                      <td>
+                          <img src="images/q6_symmetric4.png" align="middle" width="500px" />
+                          <figcaption align="middle">Cube with preprocessing + upsampling.</figcaption>
+                      </td>
+                  </tr>
+              </table>
+          </div>
+
+      </div></body>
+
 </html>
