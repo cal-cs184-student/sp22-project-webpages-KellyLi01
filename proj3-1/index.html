@@ -168,22 +168,22 @@
             </p>
             <h3>Importance Sampling Lights Algorithm</h3>
             <p>
-                We loop through all the lights and keep track of how many samples we should take per light. 
-                If a light is a point light, num_samples = 1. 
+                We loop through all the lights and keep track of how many samples we should take per light.
+                If a light is a point light, num_samples = 1.
                 If it is not a point light, we sample it num_samples = ns_area_light times.
-                Next, we loop through the number of samples we want per light, 
-                use sample_L to calculate radiance and populate our dist_to_light, w_i in world space, 
+                Next, we loop through the number of samples we want per light,
+                use sample_L to calculate radiance and populate our dist_to_light, w_i in world space,
                 and pdf for that sample.
-                We create a new ray with the direction as w_i, hit_p as the origin, 
-                and the dist_to_light as the max_t. EPS_F is also used to prevent floating point issues. 
+                We create a new ray with the direction as w_i, hit_p as the origin,
+                and the dist_to_light as the max_t. EPS_F is also used to prevent floating point issues.
                 We create a new intersection for this ray as well.
-                If our new intersection does not intersect with the ray we just made, 
-                there’s no shadow and we need to factor it into monte carlo. 
-                We also calculate cosine_theta using w_i translated to object space to see if it’s negative. 
+                If our new intersection does not intersect with the ray we just made,
+                there’s no shadow and we need to factor it into monte carlo.
+                We also calculate cosine_theta using w_i translated to object space to see if it’s negative.
                 If cosine_theta is negative, our light source is behind the object and we don’t need to add anything to our monte carlo radiance.
-                For each sample, we calculate the radiance using w_out and w_i in object space (the same way we did for uniform hemisphere sampling), 
-                then divide the value by pdf * num_samples (so that point light is factored in properly). 
-                For each sample, we add the calculated radiance / (pdf * num_samples) 
+                For each sample, we calculate the radiance using w_out and w_i in object space (the same way we did for uniform hemisphere sampling),
+                then divide the value by pdf * num_samples (so that point light is factored in properly).
+                For each sample, we add the calculated radiance / (pdf * num_samples)
                 to the total radiance to get the Monte Carlo Estimate of radiance by the end of looping through all the lights.
 
 
@@ -208,10 +208,10 @@
             <h3>Various Light Rays with Importance Sampling</h3>
             <p>
                 The noise level in soft shadows is much greater when rendering with 1 light ray,
-                causing them to look more like sporadic dark pixels than shadows. 
+                causing them to look more like sporadic dark pixels than shadows.
                 As we render with more light rays,, the shape and overall clarity of the soft shadow improves.
             </p>
-            
+
             <div align="center">
                 <table style="width=100%">
                     <tr>
@@ -236,6 +236,111 @@
                     </tr>
                 </table>
             </div>
+
+
+            <h2 align="middle">Part 4: Global Illumination</h2>
+            <h3>Global Illumination Algorithm</h3>
+            <p>
+                We first set L_out to one-bounce radiance of intersection and CPDF to a termination probability of 0.35.
+                From sample_f(), we get the brdf, w_i, and PDF.
+                We initialize a new intersection and initialize a new ray with the direction as w_i, hit_p as the origin,
+                and the depth as the parameter ray’s depth - 1. EPS_F is also used to prevent floating point issues.
+                If the depth of the given ray is greater than 1 and the new_ray intersects and object,
+                we use russian roulette with the cpdf to determine if we should continue calculating the ray’s bounces
+                If our r.depth is equal to our max_ray_depth, we do not do russian roulette,
+                thus guaranteeing at least one indirect bounce is calculated.
+                We also do not divide our monte carlo radiance (brdf * radiance * cos_theta/PDF) by CPDF.
+                Otherwise, we divide our monte carlo radiance by CPDF.
+                The radiance in our monte carlo calculation is computed with the recursive call on this function,
+                which we then add to L_out.
+                Finally, L_out is returned as the radiance of the intersected point.
+
+            </p>
+
+            <h3>Images Rendered with Global Illumination</h3>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part4-global-bench_1024_4.png" width="480px" />
+                            <figcaption align="middle">Bench rendered with global illumination</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part4-global-spheres_1024_4.png" width="480px" />
+                            <figcaption align="middle">CBspheres-lambertian rendered with global illumination</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Only Direct Illumination vs Only Indirect Illumination</h3>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part4-direct-sphere.png" width="480px" />
+                            <figcaption align="middle">Spheres rendered with only direct illumination</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part4-indirect-sphere.png" width="480px" />
+                            <figcaption align="middle">Spheres rendered with only indirect illumination</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <h3>Changing max_ray_depth</h3>
+            <p>
+                As our ray depth increases, we can see that our images introduce more light into the box.
+                This is evident in how the ceiling gradually transitions from being very dark to lit up,
+                showing that more light is bouncing off materials within the box. <br />
+                We can also see that there isn’t much difference between a max_ray_depth of 0 and 1
+                because 1 is just once bounce (which is the same as when max_ray_depth = 0). <br />
+                While the m=100 image is lighter than all the other max_ray_depth value images,
+                it is not proportionally brighter due to the russian roulette terminating the ray bounce calculations,
+                thus causing the calculation of all 100 bounces to be highly unlikely.
+
+            </p>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part4-bunny_1024_4_0.png" width="480px" />
+                            <figcaption align="middle">m = 0</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part4-bunny_1024_4_1.png" width="480px" />
+                            <figcaption align="middle">m = 1</figcaption>
+                        </td>
+                        
+                    </tr>
+                </table>
+            </div>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part4-bunny_1024_4_2.png" width="480px" />
+                            <figcaption align="middle">m = 2</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part4-bunny_1024_4_3.png" width="480px" />
+                            <figcaption align="middle">m = 3</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part4-bunny_1024_4_100.png" width="480px" />
+                            <figcaption align="middle">m = 100</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
             <p>Here is an example of how to include a simple formula:</p>
             <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
             <p>or, alternatively, you can include an SVG image of a LaTex formula.</p>
