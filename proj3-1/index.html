@@ -29,14 +29,14 @@
             <p>
                 Given a point in the normalized image, first translate it by (-0.5, -0.5) to get the image centered at (0, 0),
                 then scale the point by <pre>(tan(0.5*hFov) * 2, tan(0.5*vFov)*2)</pre> to get the point (new_x, new_y) in camera space.
-                For example, the point (0,0) gets translated into (-0.5, -0.5), then scaled to become (-tan(0.5*hFov), -tan(0.5*vFov)). 
-                The camera-to-world rotation matrix is then used on the ray (new_x, new_y, -1) to convert the ray to world space. 
+                For example, the point (0,0) gets translated into (-0.5, -0.5), then scaled to become (-tan(0.5*hFov), -tan(0.5*vFov)).
+                The camera-to-world rotation matrix is then used on the ray (new_x, new_y, -1) to convert the ray to world space.
                 The ray is then normalized to get the direction vector.
             </p>
             <h3>Pixel Sampling</h3>
             <p>
                 To input pixels from unnormalized image space, we first normalized the x and y coordinates using transformations,
-                then used rand01() with get_sample() to sample random coordinates within the (x,y) pixel. 
+                then used rand01() with get_sample() to sample random coordinates within the (x,y) pixel.
                 With these samples, we would generate the camera ray which intersects at that point using generate_ray()
                 and use Monte Carlo over all the samples to calculate the pixel’s radiance.
             </p>
@@ -46,15 +46,15 @@
                 If the ray intersects(i.e. t >= 0 and other primitive-specific conditions are met),
                 the ray’s max_t value is updated to prevent objects in the back from being visible from the camera.
             </p>
-            <h3>Triangle INtersection Algorithm</h3>
+            <h3>Triangle Intersection Algorithm</h3>
             <p>
                 According to barycentric coordinates, a point in a triangle can be described with respect to the triangle’s vertices with the equations
                 <pre>P = alpha*P_0 + beta*P_1 + gamma*P_2</pre> <pre>alpha + beta + gamma = 1 and they are all >=0.</pre> If a ray R(t) = o + td
-                has a point of intersection on the triangle, then o + td = P, 
-                thus we can plug the ray’s equation into the point-in-triangle equation, and if the t, alpha, beta, and gamma values are valid, then the ray properly intersects with the triangle. 
-                Since alpha + beta + gamma = 1, alpha can be set to (1 - beta - gamma). 
+                has a point of intersection on the triangle, then o + td = P,
+                thus we can plug the ray’s equation into the point-in-triangle equation, and if the t, alpha, beta, and gamma values are valid, then the ray properly intersects with the triangle.
+                Since alpha + beta + gamma = 1, alpha can be set to (1 - beta - gamma).
                 Rearranging the equation <pre>o + td = (1-beta-gamma)*P_0 + beta*P_1 + gamma*P_2</pre> gives us <pre>-td + (P_1-P_0)beta + (P_2-P_0)gamma = o-P_0</pre>
-                This can be written as Mx = b, where <pre>M = [-d, P_1-P_0, P_2-P_0]</pre> <pre>x = [t, beta, gamma]^T</pre><pre>b = [o-P_0]</pre> 
+                This can be written as Mx = b, where <pre>M = [-d, P_1-P_0, P_2-P_0]</pre> <pre>x = [t, beta, gamma]^T</pre><pre>b = [o-P_0]</pre>
                 Applying Cramer’s rule on the linear equation Mx=b gives us the Moller-Trumbore algorithm, which we use to find t, beta, and gamma.
                 After getting the t, beta, and gamma values, if t < 0, beta < 0, beta > 1, gamma < 0, gamma > 1, or 1-beta-gamma < 0,
                 then the ray does not intersect with the triangle. Otherwise, it intersects the triangle.
@@ -84,19 +84,154 @@
                     </tr>
                 </table>
             </div>
-            <p>Here is an example of how to include a simple formula:</p>
-            <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
-            <p>or, alternatively, you can include an SVG image of a LaTex formula.</p>
-            <p>This time it's your job to copy-paste in the rest of the sections :)</p>
 
             <h2 align="middle">Part 2: Bounding Volume Hierarchy</h2>
-            <p>Describe what you did in Part 2. etc...</p>
+            <h3>BVH Construction Algorithm</h3>
+            <p>
+                We started by initializing a bounding box.
+                We iterated through all our primitives,
+                expanding the bounding box to include the primitive bounding boxes and finding the max and min x,y,z values.
+                After looping through our primitives,
+                we computed the average of our bounding boxes centroids
+                and determined which axis had the greatest range of values in the bounding box.
+                This axis would be the one we partition on later.
+                Our splitting point heuristic was the average of bounding box centroids.
+                If the number of primitives was greater than the max number of leaves variable given,
+                we need to continue splitting.
+                We used std::partition to split the primitives into new nodes,
+                based on the axis we decided earlier.
+                If any partitions are empty,
+                we risk running into a segfault and slower runtime so we move one primitive over to the empty side.
+                Then we recursively construct our left and right leaves.
+                If we are at a leaf, we don’t do anything in addition to expanding the bounding box (explained above).
+            </p>
             <div align="center">
                 <table style="width=100%">
                     <tr>
                         <td align="middle">
                             <img src="images/part2-1-cow.gif" width="480px" />
-                            <figcaption align="middle">Results Caption: MOOOOOO</figcaption>
+                            <figcaption align="middle">The various BVHNodes of a cow</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part2-3-bench.png" width="480px" />
+                            <figcaption align="middle">Bench rendered with BVH acceleration</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part2-3-blob.png" width="480px" />
+                            <figcaption align="middle">Blob rendered with BVH acceleration</figcaption>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part2-3-lucy.png" width="480px" />
+                            <figcaption align="middle">CBlucy rendered with BVH acceleration</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part2-3-max.png" width="480px" />
+                            <figcaption align="middle">Maxplanck rendered with BVH acceleration</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <h3>Rendering Time Comparisons</h3>
+            <p>
+                We rendered both the blob and the bench during part 1 without BVH acceleration,
+                and blob.dae took approximately 20 minutes to complete rendering without BVH,
+                but took 13 seconds using BVH acceleration.
+                Bench.dae took about 10 minutes to complete rendering without BVH acceleration,
+                and took less than a second with BVH acceleration.
+                CBLucy and MaxPlanck were close to impossible without BVH acceleration. With BVH acceleration,
+                CBLucy took less than a second to complete and MaxPlanck took around 3 seconds to complete.
+            </p>
+
+            <h2 align="middle">Part 3: Direct Illumination</h2>
+            <h3>Uniform Hemisphere Sampling Algorithm</h3>
+            <p>
+                We start by calculating our PDF,
+                which is constant 1/2pi for uniform hemisphere sampling.
+                We then loop num_sample times and use hemisphereSampler to sample a new unit direction, which will be w_i in object space coming out of hit_p.
+                We then convert w_i to world space and create a new ray with an origin at our hit point
+                (+ a small constant to offset floating point issues) and the world space w_i for its direction.
+                We create a new intersection instance for this new ray, and if the ray intersects any objects (using BVHAccel’s intersect),
+                we calculate the reflectance given our incoming and outgoing solid angles, radiance,
+                and cosine theta (dot product of (0, 0, 1) and our sample in object space).
+                We then add the reflectance / PDF to our Monte Carlo sum,
+                which we then divide by num_samples and return after we finish looping num_sample times.
+
+            </p>
+            <h3>Importance Sampling Lights Algorithm</h3>
+            <p>
+                We loop through all the lights and keep track of how many samples we should take per light. 
+                If a light is a point light, num_samples = 1. 
+                If it is not a point light, we sample it num_samples = ns_area_light times.
+                Next, we loop through the number of samples we want per light, 
+                use sample_L to calculate radiance and populate our dist_to_light, w_i in world space, 
+                and pdf for that sample.
+                We create a new ray with the direction as w_i, hit_p as the origin, 
+                and the dist_to_light as the max_t. EPS_F is also used to prevent floating point issues. 
+                We create a new intersection for this ray as well.
+                If our new intersection does not intersect with the ray we just made, 
+                there’s no shadow and we need to factor it into monte carlo. 
+                We also calculate cosine_theta using w_i translated to object space to see if it’s negative. 
+                If cosine_theta is negative, our light source is behind the object and we don’t need to add anything to our monte carlo radiance.
+                For each sample, we calculate the radiance using w_out and w_i in object space (the same way we did for uniform hemisphere sampling), 
+                then divide the value by pdf * num_samples (so that point light is factored in properly). 
+                For each sample, we add the calculated radiance / (pdf * num_samples) 
+                to the total radiance to get the Monte Carlo Estimate of radiance by the end of looping through all the lights.
+
+
+            </p>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part3-hemi-bunny_64_32.png" width="480px" />
+                            <figcaption align="middle">CBbunny rendered with uniform hemisphere sampling</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part3-import-bunny_64_32.png" width="480px" />
+                            <figcaption align="middle">CBbunny rendered with importance sampling</figcaption>
+                        </td>
+                    </tr>
+                    <img src="images/part3-import-dragon_64_32.png" width="480px" />
+                    <figcaption align="middle">Dragon rendered with importance sampling</figcaption>
+                </table>
+            </div>
+
+            <h3>Various Light Rays with Importance Sampling</h3>
+            <p>
+                The noise level in soft shadows is much greater when rendering with 1 light ray,
+                causing them to look more like sporadic dark pixels than shadows. 
+                As we render with more light rays,, the shape and overall clarity of the soft shadow improves.
+            </p>
+            
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part3-dragon_1_1.png" width="480px" />
+                            <figcaption align="middle">1 light ray</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part3-dragon_1_4.png" width="480px" />
+                            <figcaption align="middle">4 light rays</figcaption>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part3-dragon_1_16.png" width="480px" />
+                            <figcaption align="middle">16 light ray</figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part3-dragon_1_64.png" width="480px" />
+                            <figcaption align="middle">64 light rays</figcaption>
                         </td>
                     </tr>
                 </table>
@@ -115,7 +250,8 @@
                     Use only <em>relative</em> paths to files, such as <pre>"./images/image.jpg"</pre>
                     Do <em>NOT</em> use absolute paths, such as <pre>"/Users/student/Desktop/image.jpg"</pre>
                 </li>
-                <li>Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
+                <li>
+                    Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
                 </li>
                 <li>Be sure to adjust the permissions on your files so that they are world readable. For more information on this please see this tutorial: <a href="http://www.grymoire.com/Unix/Permissions.html">http://www.grymoire.com/Unix/Permissions.html</a></li>
                 <li>And again, test your website on the instructional machines early!</li>
