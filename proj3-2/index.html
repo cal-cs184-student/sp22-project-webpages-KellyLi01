@@ -1,7 +1,310 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Jennifer Yang, Kelly Li  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3-2: PathTracer</h1>
+    <h2 align="middle">Jennifer Yang CS184-ABZ, Kelly Li CS184-AAR</h2>
+
+    <div class="padded">
+        <p>
+            In this project, we rendered various reflective materials on objects. 
+            For each part, we approached the problem by reading the spec and reviewing lecture slides to better understand the given algorithms for each material.
+            We encountered basic trigonometry issues 
+            (aka we forgot that tangent was sine / cosine and our bunny rendered colorless har har har :') )
+        </p>
+        <o>
+            https://cal-cs184-student.github.io/sp22-project-webpages-KellyLi01/proj3-2/index.html
+
+            <h2 align="middle">Part 1: Mirror and Glass Materials</h2>
+            <h3>Reflection (BSDF::reflect())</h3>
+            <p>
+                To implement reflection, we assigned our wi vector to a vector with wo’s x and y coordinates multiplied by -1, and z coordinate kept the same.
+            </p>
+
+            <h3>Mirror Material (MirrorBSDF::sample_f())</h3>
+            <p>
+                To implement the mirror material’s sample_f(), we called the reflect function to set our wi vector,
+                set PDF to 1, and returned reflectance / abs(costheta of w_i)
+            </p>
+            <h3>Refraction (BSDF::refract(), RefractionBSDF::sample_f())</h3>
+            <p>
+                First, we check if we are starting outside the object. If we are starting outside the object,
+                we set our eta to be 1 /ior,
+                because we will be entering the non-air material. “ior” is our index of refraction
+                Then, we check if we have total internal reflection (with the equation given in the spec)
+                and return false immediately if we have total internal reflection.
+                Lastly, we assign our new wi vector’s x, y, and z.
+                Our wi’s x value is -1 * eta * wo.x, our wi’s y is -1 * eta * wo.y,
+                and our wi’s z is [insert opposite sign] sqrt(total internal reflection).
+            </p>
+            <h3>Glass Material (GlassBSDF::sample_f())</h3>
+            <p>
+                We first refracted in the GlassBSDF’s sample_f() to check if there is total internal reflectance in the object.
+                If there is total internal reflectance,
+                then we only reflect and will act the same as the MirrorBSDF (pdf = 1, set wi with reflect, return reflectance / abs(costheta of w_i)).
+                Otherwise, we use Schlick’s to determine whether we reflect or refract.
+                To find the specular reflection coefficient R, we first calculated R_0 with glass’s ior and 1 (since 1 is the ior of air)
+                and used Schlick’s approximation formula.
+                If a coin flip with R returns true, then we reflect to get w_i, set the PDF to R, and return R * reflectance / abs(costheta of w_i).
+                Otherwise, we refract to get w_i, set PDF to 1-R, and return (1-R)* transmittance / abs(costheta of w_i) / eta^2
+            </p>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 1/part1-spheres.png" width="480px" />
+                            <figcaption align="middle">Final CBspheres rendering with 256 samples per pixel, 4 samples per area light, max ray depth 7</figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <h3>Different max_ray_depth renderings</h3>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-0.png" width="480px" />
+                            <figcaption align="middle">
+                                0 bounce: only the light source can be seen in the scene
+                            </figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-1.png" width="480px" />
+                            <figcaption align="middle">
+                                1 bounce: background walls are visible, spheres are black except for the white squares from the light source being reflected
+                            </figcaption>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-2.png" width="480px" />
+                            <figcaption align="middle">
+                                2 bounce: left sphere (mirror material) shows reflection clearly,
+                                right sphere (glass material) shows reflection but overall image is fairly dark
+                            </figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-3.png" width="480px" />
+                            <figcaption align="middle">
+                                3 bounce: left sphere reflection appears lighter than 1 bounce,
+                                light is being refracted in the left sphere and sphere is no longer dark.
+                                Shadow of right sphere has a circle of light in it
+                            </figcaption>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-4.png" width="480px" />
+                            <figcaption align="middle">
+                                4 bounce: whole scene is brighter,
+                                glow appearing near bottom of right sphere and on the blue wall.
+                                Reflection of right sphere in the left sphere appears brighter
+                            </figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-5.png" width="480px" />
+                            <figcaption align="middle">
+                                5 bounce: entire scene appears brighter
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 1/spheres-100.png" width="480px" />
+                            <figcaption align="middle">
+                                100 bounce: entire scene appears much brighter
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <h4>Explanations</h4>
+            <p>
+                0 bounce: entire scene is black, the only light in the scene is from the light source on top because we have no light bounces
+                <br />
+                1 bounce: only one bounce, so our image stays dark.
+                The light only hits the first surface before being reflected towards the light (this can be seen with the two lit squares on the balls).
+                <br />
+                2 bounce: both balls are getting brighter because two bounces allows the light to reflect from object to object
+                (balls to walls, walls to walls, balls to balls, walls to balls)
+                <br />
+                3 bounce: Once we have three bounces, we can see signs of refraction.
+                This is evident by the small white circle in the shadow of the front ball,
+                where light bounces from the light onto the surface,
+                through the ball, and onto the ground before reaching the camera.
+                <br />
+                4 bounce: There is additional glow on the sphere and the wall because the light being tracked can now bounce the same as 3-bounce,
+                but after hitting the ground it bounces again on the sphere (evident by a brighter sphere)
+                or on the wall (evident by the small white spot on the blue wall) before hitting the camera.
+                <br />
+                5 bounce: The overall scene gets brighter because the light can bounce more, even refract through the right sphere again.
+                <br />
+                100 bounce: Overall scene is a lot brighter than 5 bounces because the light can bounce 20 times the amount it previously did.
+
+            </p>
+
+            <h2 align="middle">Part 2: Microfacet Materials</h2>
+            <h3>Implementation Summary</h3>
+            <p>
+                In this part, we implemented importance sampling.
+                We started by implementing the BRDF evaluation function.
+                We then implemented the normal distribution function that is used in the BRDF evaluation function.
+                We calculated the half vector of w_i and w_o, used it to find theta_h,
+                the angle between h and the macro surface normal, and calculated D(h).
+                We then implemented the Fresnel term using eta and k terms that were given.
+                Lastly, we implemented importance sampling in sample_f() by sampling theta_h and phi_h,
+                using our PDFs for theta and phi to find the PDF of our sampled microfacet normal,
+                and using the PDF of our sampled microfacet normal to calculate the pdf of sampling w_i.
+
+            </p>
+            <h3>Different Alpha Renderings</h3>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/dragon0.005.png" width="480px" />
+                            <figcaption align="middle">
+                                alpha = 0.005
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p>
+                This is the smallest alpha value out of the four,
+                so we can see that this dragon has the smoothest surface out of the four dragons.
+                We can see that the dragon is shiny and glossy.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/dragon0.05.png" width="480px" />
+                            <figcaption align="middle">
+                                alpha = 0.05
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p>
+                Compared to the 0.005 alpha value dragon,
+                we can see that this dragon is less shiny and is rougher.
+                There are less obvious glares on the dragon.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/dragon0.25.png" width="480px" />
+                            <figcaption align="middle">
+                                alpha = 0.25
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p>
+                This dragon is even less glossy and much rougher than the 0.05
+                and 0.005 dragons. We see less glare on the surface of the dragon.
+            </p>
+
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/dragon0.5.png" width="480px" />
+                            <figcaption align="middle">
+                                alpha = 0.5
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p>
+                This last dragon has the largest alpha value and is thus the roughest dragon out of all dragons.
+                We see little to no shiny glare on the surface, making the dragon look quite matte.
+            </p>
+
+            <h3>Cosine Hemisphere vs Importance Sampling</h3>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/bunny-cos-hemisphere.png" width="480px" />
+                            <figcaption align="middle">
+                                Rendered with hemisphere sampling
+                            </figcaption>
+                        </td>
+                        <td align="middle">
+                            <img src="images/part 2/bunny-importance.png" width="480px" />
+                            <figcaption align="middle">
+                                Rendered with importance sampling
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <p>
+                Cosine hemisphere sampling has a lot of black spots scattered,
+                which makes sense since some of the sampled rays do not hit or are not from light sources.
+                Importance sampling samples directly from the light source,
+                so we will always see some sort of light in each sample hit the object.
+            </p>
+
+            <h3>Other Conductor Material</h3>
+            <p>
+                We chose iron as our conductor material.
+                Our parameters for eta were 2.8851, 2.95, and 2.65.
+                Our parameters for k were 3.0449, 2.93, and 2.8075.
+            </p>
+            <div align="center">
+                <table style="width=100%">
+                    <tr>
+                        <td align="middle">
+                            <img src="images/part 2/iron-dragon-alpha0.25.png" width="480px" />
+                            <figcaption align="middle">
+                                Rendered with iron material
+                            </figcaption>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <h2>Partners!</h2>
+            <p>
+                We worked on the project over Zoom,
+                switching off who was coding and who was driving.
+                We never worked alone, so we were always collaborating.
+                We also went to project party on Monday to work on the project and get help.
+                Overall, this project was a bit lighter compared to the last project,
+                but we did start during spring break which was a bit of an L.
+                It was cool to see the materials render though.
+                We learned how to render materials (and how to compute tangent! Har har har).
+            </p>
+        </o></div>
+</body>
 </html>
+
+
+
+
