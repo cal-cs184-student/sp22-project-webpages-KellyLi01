@@ -26,13 +26,23 @@
 <h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2017</h1>
 <h1 align="middle">Project 4: Cloth Simulator</h1>
 <h2 align="middle">KELLY LI, CS184-AAR, JENNIFER YANG, CS184-ABZ</h2>
+<h3 align="middle">https://cal-cs184-student.github.io/sp22-project-webpages-KellyLi01/proj4/index.html</h3>
 
 <br><br>
 
     <div>
 
         <h2 align="middle">Overview</h2>
-        <p>Give a high-level overview of what you implemented in this project. Think about what you've built as a whole. Share your thoughts on what interesting things you've learned from completing the project.</p>
+        <p>
+            In this project, we were able to simulate cloth with point masses and springs. 
+            We started by creating the actual grid, rendering a plane lying flat. 
+            We then applied force equations to simulate forces being applied on the springs, 
+            which got us a draped cloth. 
+            We then implemented collisions between our cloth and objects like spheres and planes 
+            (showing us a cloth draped over a sphere and lying on a plane), 
+            and self-collision (showing us a cloth folding on itself). 
+            Lastly, we applied shading to the cloth to simulate different types of cloth with varying textures and appearances.
+        </p>
 
         <h2 align="middle">Part I: Masses and springs</h2>
         <h3>Implementation</h3>
@@ -278,7 +288,13 @@
 
         <h2 align="middle">Part IV: Handling self-collisions</h2>
         <h3>Implementation</h3>
-
+        <p>
+            First, we worked on mapping our point mass positions to their respective hashes. We created 3D pins as per the spec and checked if our cloth was horizontal or vertical. If horizontal, we truncated our point mass’s z coordinate in terms of w, x coordinate in terms of h, and y coordinate in terms of t. If vertical, we truncated our point mass’s z point to t, x coordinate to h, and y coordinate to w. We then used our hash function to hash our truncated x, y, and z coordinates with the following equation:
+            ((hashed_x * star) + hashed_y) * star + hashed_z) <br />
+            Then, we worked on building our spatial map. We looped through our point masses and hashed each position using our hash_position() function. If our map doesn’t already contain that hash as a key, we initialize a new vector of point masses for it. Lastly, we add our point mass to the vector corresponding to its respective hash.
+            For self collision, we hash our given point mass, find the other point masses that hash to the same value, and apply a correction vector to move any point masses that are within 2 * thickness distance away from our given point mass to be 2 * thickness away.
+            We then calculate the final correction vector for our given point mass by averaging all our individual correction vectors and dividing by simulation_steps.
+        </p>
         <div align="center">
             <table style="width=100%">
                 <tr>
@@ -305,7 +321,7 @@
                 </tr>
             </table>
         </div>
-        
+
         <h3>Changing Density</h3>
         <p>
             <b>High density:</b> smaller and more folds as the fabric fell on itself,
@@ -435,9 +451,21 @@
 
         <h2 align="middle">Part V: Shaders</h2>
         <h3>What is a Shader Program?</h3>
+        <p>
+            A shader program is a program that produces the effects of lighting and various materials and their reflections on each individual vertex that is input. Thus, we only care about one given vertex position in the fragment shader.
+            <br />
+            Vertex shaders transform vertices (like moving its position in displacement) and fragment shaders apply colors to vertices. We take the transformed vertices from a vertex shader and plug it into the fragment shader to get the expected shaded color on our vertices. The vertex shader applies the fragment shader to each vertex.
+        </p>
 
         <h3>Blinn-Phong Shading</h3>
-        <h4>Implementation</h4>
+        <h4>Blinn-Phong Shading Model Explanation</h4>
+        <p>
+            Blinn-Phong shading combines three types of shading:
+            ambient, diffuse, and specular. Ambient shading provides the underlying color,
+            diffuse shading provides the preliminary shading that is independent of viewing perspective,
+            and specular shading provides the shinier/reflective shading that depends on which perspective you are viewing the object from.
+            Blinn-Phong relies more on the resulting visual appearance instead of the physics that go into creating the shading.
+        </p>
 
         <div align="center">
             <table style="width=100%">
@@ -467,11 +495,83 @@
         </div>
 
         <h3>Texture Mapping (with custom texture)</h3>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part5-pingoo.png" width="480px" />
+                        <figcaption align="middle">Custom texture</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/part5-texture-pingoo.png" width="480px" />
+                        <figcaption align="middle">Custom texture on cloth</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
 
         <h3>Bump Mapping and Displacement Mapping</h3>
         <h4>Comparisons</h4>
-
+        <div align="center">
+            <img src="images/part5-bump-text3.png" width="480px" />
+            <figcaption align="middle">Bump mapping on cloth</figcaption>
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part5-bump-text3-sphere.png" width="480px" />
+                        <figcaption align="middle">Bump mapping on sphere</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/part5-displacement-text3-sphere.png" width="480px" />
+                        <figcaption align="middle">Displacement mapping on sphere</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            The bump mapped sphere is perfectly round,
+            though it has the texture applied to it.
+            In comparison, the displacement mapped sphere is not perfectly round,
+            and shows that the texture now also affects the position of the vertex instead of just the color.
+        </p>
         <h4>Comparisons with Different Sphere Mesh Coarseness</h4>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part5-bump-text3-sphere-coarse16.png" width="480px" />
+                        <figcaption align="middle">Bump mapping on sphere with -o 16 -a 16</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/part5-displacement-text3-sphere-coarse16.png" width="480px" />
+                        <figcaption align="middle">Displacement mapping on sphere with -o 16 -a 16</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            <b>-o 16 -a 16:</b> the bump mapping is unchanged from the default coarseness,
+            but the displacement-mapped sphere is overall smoother,
+            with less, more spaced out bumps.
+        </p>
+        <div align="center">
+            <table style="width=100%">
+                <tr>
+                    <td align="middle">
+                        <img src="images/part5-bump-text3-sphere-coarse128.png" width="480px" />
+                        <figcaption align="middle">Bump mapping on sphere with -o 128 -a 128</figcaption>
+                    </td>
+                    <td align="middle">
+                        <img src="images/part5-displacement-text3-sphere-coarse128.png" width="480px" />
+                        <figcaption align="middle">Displacement mapping on sphere with -o 128 -a 128</figcaption>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <p>
+            <b>-o 128 -a 128:</b> the bump-mapped sphere is unchanged from the default coarseness,
+            but the displacement-mapped sphere has more bumps everywhere.
+        </p>
 
         <h3>Mirror Shader</h3>
         <div align="center">
@@ -489,7 +589,16 @@
             </table>
         </div>
 
+        <h2>Partners</h2>
+        <p>
+            We log onto a zoom call to work on the project. 
+            One person codes while the other person drives. 
+            We take turns programming and committing to the Github repo. 
+            We never work on the project alone, so we are always collboarating.
+            We also worked in person a couple of times, 
+            with a similar system of one person coding and the other person driving.
 
+        </p>
 
     </div></body>
 </html>
